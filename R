@@ -1,0 +1,306 @@
+original_name <- c(list.files())
+
+new_name <- c("trips_april20.csv", 
+              "trips_may20.csv", 
+              "trips_june20.csv", 
+              "trips_jully20.csv",
+              "trips_august20.csv", 
+              "trips_september20.csv",
+              "trips_october20.csv",
+              "trips_november20.csv", 
+              "trips_december20.csv",
+              "trips_jan21.csv",
+              "trips_feb21.csv",
+              "trips_mar21.csv",
+              "trips_april21.csv",
+              "trips_may21.csv",
+              "trips_june21.csv", 
+              "trips_jully21.csv",
+              "trips_august21.csv",
+              "trips_september21.csv",
+              "trips_october21.csv",
+              "trips_november21.csv",
+              "trips_december21.csv",
+              "trips_jan22.csv",
+              "trips_feb22.csv", 
+              "trips_mar22.csv")
+
+length(original_name)
+length(new_name)
+file.rename(original_name, new_name)
+
+
+filenames <- gsub("\\.csv$","", list.files(pattern="\\.csv$"))
+
+for(i in filenames){
+  assign(i, read.csv(paste(i, ".csv", sep="")))
+}
+
+colnames(trips_april20)
+str(trips_april20)
+
+
+total_trips <- rbind(trips_april20, 
+              trips_may20, 
+              trips_june20, 
+              trips_jully20,
+              trips_august20, 
+              trips_september20,
+              trips_october20,
+              trips_november20, 
+              trips_december20,
+              trips_jan21,
+              trips_feb21,
+              trips_mar21,
+              trips_april21,
+              trips_may21,
+              trips_june21, 
+              trips_jully21,
+              trips_august21,
+              trips_september21,
+              trips_october21,
+              trips_november21,
+              trips_december21,
+              trips_jan22,
+              trips_feb22, 
+              trips_mar22)
+
+total_trips_final <- rbind(trips_mar21,
+                     trips_april21,
+                     trips_may21,
+                     trips_june21, 
+                     trips_jully21,
+                     trips_august21,
+                     trips_september21,
+                     trips_october21,
+                     trips_november21,
+                     trips_december21,
+                     trips_jan22,
+                     trips_feb22, 
+                     trips_mar22)
+
+filenames <- gsub("\\.csv$","", list.files(pattern ="\\.csv$"))
+for(i in filenames){
+  assign(i, read.csv(paste(i, ".csv", sep="")))
+}
+
+View(Divvy_Stations_2017_Q1Q2)
+View(Divvy_Stations_2017_Q1Q2)
+View(Divvy_Stations_2017_Q3Q4)
+
+Divvy_Stations_2015 <- Divvy_Stations_2015[-c(0,6)]
+Divvy_Stations_2016_Q3 <- Divvy_Stations_2016_Q3[-c(0,6)]
+Divvy_Stations_2016_Q4 <- Divvy_Stations_2016_Q4[-c(0,6)]
+Divvy_Stations_2017_Q1Q2 <- Divvy_Stations_2017_Q1Q2[-c(0,3)]
+Divvy_Stations_2017_Q1Q2 <- Divvy_Stations_2017_Q1Q2[-c(0,6)]
+Divvy_Stations_2017_Q3Q4 <- Divvy_Stations_2017_Q3Q4[-c(0,3)]
+Divvy_Stations_2017_Q3Q4 <- Divvy_Stations_2017_Q3Q4[-c(0,6)]
+
+install.packages("hms")
+library("hms")
+
+ride_length <- difftime(total_trips_final$ended_at, total_trips_final$started_at)
+as_hms(ride_length) -> ride_length
+View(ride_length)
+
+total_trips_final2 <- mutate(total_trips_final, ride_length = ride_length)
+head(total_trips_final2)
+
+strftime(total_trips_final2$started_at, "%A") -> day_of_week2
+total_trips_final2 <- mutate(total_trips_final2, day_of_week = day_of_week)
+
+
+total_trips_final2 <- total_trips_final2 %>% 
+  select(-c(start_lat, start_lng))
+
+unique(total_trips_final2$member_casual)
+
+total_trips_final2 %>% 
+  filter(ride_length >= 0) -> total_trips_final2
+
+ride_length_data <- as.numeric(total_trips_final2$ride_length)
+
+summary(ride_length_data)
+
+aggregate(total_trips_final2$ride_length ~ total_trips_final2$member_casual, FUN = mean)
+
+aggregate(total_trips_final2$ride_length ~ total_trips_final2$member_casual +
+            +             total_trips_final2$day_of_week2, FUN = mean) -> weekday
+
+
+total_trips_final2 %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) -> weekday_analysis 
+
+setNames(weekday, c("Customer", "Day", "Duration")) -> weekday ##Changing Colnames
+mutate(weekday, Duration = as.numeric(Duration)) -> weekday
+esquisser(weekday)
+
+setNames(mean_customer, c("Customer", "Mean")) -> mean_customer
+mutate(mean_customer, Mean = as.numeric(Mean)) -> mean_customer
+
+ggplot(mean_customer) +
+  aes(x = Customer, weight = Mean) +
+  geom_bar(fill = "#00AFBB") +
+  theme_minimal() + ylab("Mean in seconds") + 
+  ggtitle("Ride length mean (in seconds) by user type")
+
+teste <- cbind(total_trips_final2$member_casual, total_trips_final2$rideable_type)
+teste <- as.data.frame(teste)
+View(teste)
+setNames(teste, c("Member", "Bike_Type")) -> teste
+
+esquisse::esquisser(teste)
+
+ggplot(Bike_Type) +
+  aes(x = Bike_Type, weight = freq) +
+  geom_bar(fill = "#00AFBB") +
+  theme_minimal() +
+  ggtitle("Bike Type used in each Ride")
+
+teste %>% 
+  filter(Member == "casual") -> casual_bike
+
+teste %>% 
+  filter(Member == "member") -> member_bike
+
+count(casual_bike, "Bike_Type") -> casual_bike_count
+count(member_bike, "Bike_Type") -> member_bike_count
+
+TypeOfMember <- c("Member", "Casual")
+Member <- c("2100009", "0", "1221358")
+Caual <- c("1303142", "319641", "1007731")
+bike_type_df <- c("Classic", "Docked", "Eletric")
+
+##### Não utilizado
+bike_by_type <- rbind(Member, Caual)
+View(bike_by_type)
+setNames(bike_by_type, c("Classic", "Docked", "Eletric")) -> bike_by_type
+View(bike_by_type)
+bike_by_type <- as.data.frame(bike_by_type)
+
+bike_by_type <- as.matrix(bike_by_type)
+
+
+ggplot(member_bike_count) +
+  aes(x = Bike_Type, weight = freq) +
+  geom_bar(fill = "#00AFBB") +
+  theme_minimal()
+
+ggplot() +
+  geom_bar(data = member_bike_count, aes(x = Bike_Type, weight = freq, fill = "blue")) +
+  geom_bar(data = casual_bike_count, aes(x = Bike_Type, weight = freq, fill = "red")) +
+  theme_minimal() + 
+  ggtitle("Type of Bike x Customer membership") +
+  scale_fill_discrete(name = "Customer", labels = c("Member", "Casual")) +
+  ylab("Quantity\n") + xlab("Bike Type \n")
+  
+View(total_trips_final2)
+
+## Analisando stations
+
+count(total_trips_final2, "start_station_name") -> stations
+View(stations)
+stations[-1,] -> stations
+View(stations)
+setNames(stations, c("Station", "Frequency")) -> stations
+
+stations[desc(stations$Frequency),] -> stations
+
+stations %>% 
+  filter(Frequency >= 30000) -> teste
+View(teste)
+esquisse::esquisser(teste)
+
+
+ggplot(teste) +
+  aes(x = Station, weight = Frequency) +
+  geom_bar(fill = "#00AFBB") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  ylab("Quantity") + xlab("Station Name") + 
+  ggtitle("Most used starting stations")
+
+
+teste_stat <- base::cbind(total_trips_final2$start_station_name, total_trips_final2$member_casual)
+View(teste)
+setNames(teste_stat, c("Station", "Freq")) -> teste_stat
+teste_stat <- as.data.frame(teste_stat)
+View(teste_stat)
+
+teste_stat %>% 
+  filter(Freq == "casual") ->casual_stations
+
+teste_stat %>% 
+  filter(Freq == "member") -> member_stations
+
+count(casual_stations, "Station") -> casual_stations_count
+casual_stations_count[-1,] -> casual_stations_count
+
+count(member_stations, "Station") -> member_stations_ccount
+member_stations_ccount[-1,] -> member_stations_ccount
+
+casual_stations_count %>% 
+  filter(freq >= 12950) -> top_casual_stations
+
+member_stations_ccount %>% 
+  filter(freq >= 17400) -> top_member_stations
+
+ggplot()+
+  geom_bar(data = top_member_stations, aes(x = Station, weight = freq, fill = "red")) +
+  geom_bar(data = top_casual_stations, aes(x = Station, weight = freq, fill = "blue")) +
+  theme_minimal() + 
+  ggtitle("Most used stations by costumer type") +
+  scale_fill_discrete(name = "Customer", labels = c("Member", "Casual")) +
+  ylab("Rides started\n") + xlab("Stations \n") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+## Analisando por dias da semana
+trip_day_costumer <- cbind(total_trips_final2$ride_id, total_trips_final2$member_casual, total_trips_final2$day_of_week2)
+setNames(trip_day_costumer, c("Ride", "Costumer", "Day")) -> trip_day_costumer
+View(trip_day_costumer)
+
+trip_day_costumer %>% 
+  filter(Costumer == "casual") -> casual_rides
+
+trip_day_costumer %>% 
+  filter(Costumer == "member") -> member_rides
+
+count(casual_rides, "Day") -> counted_casual_rides
+count(member_rides, "Day") -> counted_member_rides
+
+setNames(counted_casual_rides, c("Day", "Rides")) -> counted_casual_rides
+setNames(counted_member_rides, c("Day", "Rides")) -> counted_member_rides
+
+
+ggplot()+
+  geom_bar(data=counted_member_rides, aes(x = ordered(Day, levels =c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")), weight = Rides, fill = "Member"))+
+  geom_bar(data=counted_casual_rides, aes(x = ordered(Day, levels =c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")), weight = Rides, fill = "Casual")) +
+  theme_minimal() + xlab("Day of the Week\n") + ylab("Number of Rides") +
+  scale_fill_discrete(name = "Customer", labels = c("Casual", "Member")) +
+  ggtitle("Number of Rides per Day of the Week")
+
+## Analisando horário
+
+hour_costumer <- cbind(total_trips_final2$member_casual, total_trips_final2$day_of_week2, total_trips_final2$hour_start)
+setNames(hour_costumer, c("Costumer", "Day", "Hour")) -> hour_costumer
+
+hour_costumer %>% 
+  filter(Costumer == "member") -> hour_member
+
+hour_costumer %>% 
+  filter(Costumer == "casual") -> hour_casual
+
+
+ggplot() +
+  geom_bar(data = hour_casual, aes(x = ordered(Hour, levels=c("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23")), fill = Costumer))+
+  theme_minimal()+ xlab("Hour") + ylab("Rides") +
+  scale_fill_manual(values = c("#00AFBB")) + theme(legend.position = "none") +
+  ggtitle("Rides started by hour - Casual Customers")
+
+
+ggplot() +
+  geom_bar(data = hour_member, aes(x = ordered(Hour, levels=c("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23")), fill = Costumer))+
+  theme_minimal()+ xlab("Hour") + ylab("Rides") +
+  scale_fill_manual(values = c("#00AFBB")) + theme(legend.position = "none") +
+  ggtitle("Rides started by hour - Member Customers")
